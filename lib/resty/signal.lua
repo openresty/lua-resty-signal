@@ -4,6 +4,7 @@ local _M = {
 
 
 local ffi = require "ffi"
+local base = require "resty.core.base"
 
 
 local C = ffi.C
@@ -12,7 +13,6 @@ local tonumber = tonumber
 local assert = assert
 local errno = ffi.errno
 local type = type
-local base = require "resty.core.base"
 local new_tab = base.new_tab
 local error = error
 
@@ -40,6 +40,7 @@ do
                 io_close(f)
                 return ffi.load(fpath)
             end
+
             tried_paths[i] = fpath
             i = i + 1
         end
@@ -51,11 +52,8 @@ end  -- do
 
 local resty_signal, tried_paths = load_shared_lib("librestysignal.so")
 if not resty_signal then
-    local len = #tried_paths
-    tried_paths[len + 1] = 'tried above paths but '
-                           .. 'can not load librestysignal.so'
-    len = len + 1
-    error(table.concat(tried_paths, '\r\n', 1, len))
+    error("could not load librestysignal.so from the following paths:\n" ..
+          table.concat(tried_paths, "\n"), 2)
 end
 
 
@@ -106,6 +104,7 @@ local signals = {
     PROF = 27,
     WINCH = 28,
     IO = 29,
+    PWR = 30,
 }
 
 
@@ -128,10 +127,11 @@ function _M.kill(pid, sig)
         end
     end
 
-    local rc =  tonumber(C.kill(assert(pid), signum))
+    local rc = tonumber(C.kill(assert(pid), signum))
     if rc == 0 then
         return true
     end
+
     local err = ffi_str(C.strerror(errno()))
     return nil, err
 end

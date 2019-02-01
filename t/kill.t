@@ -12,7 +12,26 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: send NONE to a nonexistent process
+=== TEST 1: returns an error if signal is unknown
+--- config
+    location = /t {
+        content_by_lua_block {
+            local resty_signal = require "resty.signal"
+
+            local ok, err = resty_signal.kill(pid, "FOO")
+            if not ok then
+                ngx.say("failed to send FOO signal: ", err)
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+failed to send FOO signal: unknown signal name
+
+
+
+=== TEST 2: send NONE to a non-existing process
 --- config
     location = /t {
         content_by_lua_block {
@@ -37,7 +56,7 @@ failed to send NONE signal: No such process
 
 
 
-=== TEST 2: send TERM to a nonexistent process
+=== TEST 3: send TERM to a non-existing process
 --- config
     location = /t {
         content_by_lua_block {
@@ -62,7 +81,7 @@ failed to send TERM signal: No such process
 
 
 
-=== TEST 3: send NONE to an existent process
+=== TEST 4: send NONE to an existing process
 --- config
     location = /t {
         content_by_lua_block {
@@ -93,7 +112,7 @@ ok
 
 
 
-=== TEST 4: send TERM to an existent process
+=== TEST 5: send TERM to an existing process
 --- config
     location = /t {
         content_by_lua_block {
@@ -125,7 +144,7 @@ failed to send TERM signal: No such process
 
 
 
-=== TEST 5: send KILL to an existent process
+=== TEST 6: send KILL to an existing process
 --- config
     location = /t {
         content_by_lua_block {
@@ -157,7 +176,7 @@ failed to send KILL signal: No such process
 
 
 
-=== TEST 6: send TERM signal value, 15, directly to an existent process
+=== TEST 7: send TERM signal value, 15, directly to an existing process
 --- config
     location = /t {
         content_by_lua_block {
