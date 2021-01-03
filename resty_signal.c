@@ -30,7 +30,10 @@ enum {
     RS_PROF = 27,
     RS_WINCH = 28,
     RS_IO = 29,
-    RS_PWR = 30
+    RS_PWR = 30,
+    RS_EMT = 31,
+    RS_SYS = 32,
+    RS_INFO = 33
 };
 
 int resty_signal_signum(int num)
@@ -115,9 +118,10 @@ int resty_signal_signum(int num)
     case RS_IO:
         return SIGIO;
 
+#ifdef __linux__
     case RS_PWR:
         return SIGPWR;
-
+#endif
     case RS_USR1:
         return SIGUSR1;
 
@@ -126,7 +130,16 @@ int resty_signal_signum(int num)
 
     case RS_URG:
         return SIGURG;
+#ifdef __APPLE__
+    case RS_EMT:
+        return SIGEMT;
 
+    case RS_SYS:
+        return SIGSYS;
+
+    case RS_INFO:
+        return SIGINFO;
+#endif
     default:
         return -1;
     }

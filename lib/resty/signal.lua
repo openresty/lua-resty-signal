@@ -112,7 +112,10 @@ local signals = {
     PROF = 27,
     WINCH = 28,
     IO = 29,
-    PWR = 30
+    PWR = 30,
+    EMT = 31,
+    SYS = 32,
+    INFO = 33
 }
 
 function _M.kill(pid, sig)

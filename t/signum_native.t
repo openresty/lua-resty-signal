@@ -91,14 +91,17 @@ __DATA__
                 USR1 = 30,
                 USR2 = 31
             }
-            local signals = linux_signals
-            if ffi.os == "OSX" then
-                signals = macos_signals
+
+            if ffi.os == "Linux" then
+                for signame, num in pairs(linux_signals) do
+                    assert(num == tonumber(signum_native(signame)))
+                end
+            elseif ffi.os == "OSX" then
+                for signame, num in pairs(macosx_signals) do
+                    assert(num == tonumber(signum_native(signame)))
+                end
             end
-            for signame, num in pairs(linux_signals) do
-                --ngx.say(signame, "\t", num, "\t", signum_native(signame))
-                assert(num == tonumber(signum_native(signame)))
-            end
+            
         }
     }
 --- response_body
