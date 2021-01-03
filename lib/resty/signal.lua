@@ -115,7 +115,7 @@ local signals = {
 function _M.kill(pid, sig)
     assert(sig)
 
-    local signum, err = _M.signum_native(sig)
+    local signum, err = _M.signum(sig)
     if err then
         return nil, err
     end
@@ -131,23 +131,21 @@ end
 
 
 function _M.signum(name)
-    return signals[name]
-end
-
-
-function _M.signum_native(sig)
     local signum
-    if type(sig) == "number" then
-        signum = sig
+    if type(name) == "number" then
+        signum = name
     else
-        local id = signals[sig]
+        local id = signals[name]
         if not id then
             return nil, "unknown signal name"
         end
 
         signum = tonumber(resty_signal.resty_signal_signum(id))
         if signum < 0 then
-            error(string_format("missing C def for signal %s = %d", sig, id), 2)
+            error(
+                string_format("missing C def for signal %s = %d", name, id),
+                2
+            )
         end
     end
     return signum
