@@ -50,11 +50,11 @@ do
     end  -- function
 end  -- do
 
+
 local resty_signal, tried_paths = load_shared_lib("librestysignal.so")
 if not resty_signal then
-    error(
-        "could not load librestysignal.so from the following paths:\n" ..
-            table.concat(tried_paths, "\n"), 2)
+    error("could not load librestysignal.so from the following paths:\n" ..
+          table.concat(tried_paths, "\n"), 2)
 end
 
 
@@ -62,9 +62,11 @@ ffi.cdef[[
 int resty_signal_signum(int num);
 ]]
 
+
 if not pcall(function () return C.kill end) then
     ffi.cdef("int kill(int32_t pid, int sig);")
 end
+
 
 if not pcall(function () return C.strerror end) then
     ffi.cdef("char *strerror(int errnum);")
