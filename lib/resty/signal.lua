@@ -2,10 +2,8 @@ local _M = {
     version = 0.02
 }
 
-
 local ffi = require "ffi"
 local base = require "resty.core.base"
-
 
 local C = ffi.C
 local ffi_str = ffi.string
@@ -15,7 +13,7 @@ local errno = ffi.errno
 local type = type
 local new_tab = base.new_tab
 local error = error
-
+local string_format = string.format
 
 local load_shared_lib
 do
@@ -46,31 +44,41 @@ do
         end
 
         return nil, tried_paths
-    end  -- function
-end  -- do
-
+    end -- function
+end -- do
 
 local resty_signal, tried_paths = load_shared_lib("librestysignal.so")
 if not resty_signal then
-    error("could not load librestysignal.so from the following paths:\n" ..
-          table.concat(tried_paths, "\n"), 2)
+    error(
+        "could not load librestysignal.so from the following paths:\n" ..
+            table.concat(tried_paths, "\n"),
+        2
+    )
 end
 
-
-ffi.cdef[[
+ffi.cdef [[
 int resty_signal_signum(int num);
 ]]
 
-
-if not pcall(function () return C.kill end) then
+if
+    not pcall(
+        function()
+            return C.kill
+        end
+    )
+ then
     ffi.cdef("int kill(int32_t pid, int sig);")
 end
 
-
-if not pcall(function () return C.strerror end) then
+if
+    not pcall(
+        function()
+            return C.strerror
+        end
+    )
+ then
     ffi.cdef("char *strerror(int errnum);")
 end
-
 
 -- Below is just the ID numbers for each POSIX signal. We map these signal IDs
 -- to system-specific signal numbers on the C land (via librestysignal.so).
@@ -104,27 +112,15 @@ local signals = {
     PROF = 27,
     WINCH = 28,
     IO = 29,
-    PWR = 30,
+    PWR = 30
 }
-
 
 function _M.kill(pid, sig)
     assert(sig)
 
-    local signum
-    if type(sig) == "number" then
-        signum = sig
-
-    else
-        local id = signals[sig]
-        if not id then
-            return nil, "unknown signal name"
-        end
-
-        signum = tonumber(resty_signal.resty_signal_signum(id))
-        if signum < 0 then
-            error("missing C def for signal ", sig)
-        end
+    local signum, err = _M.signum_native(sig)
+    if err then
+        return nil, err
     end
 
     local rc = tonumber(C.kill(assert(pid), signum))
@@ -136,10 +132,26 @@ function _M.kill(pid, sig)
     return nil, err
 end
 
-
 function _M.signum(name)
     return signals[name]
 end
 
+function _M.signum_native(sig)
+    local signum
+    if type(sig) == "number" then
+        signum = sig
+    else
+        local id = signals[sig]
+        if not id then
+            return nil, "unknown signal name"
+        end
+
+        signum = tonumber(resty_signal.resty_signal_signum(id))
+        if signum < 0 then
+            error(string_format("missing C def for signal %s = %d", sig, id), 2)
+        end
+    end
+    return signum
+end
 
 return _M
