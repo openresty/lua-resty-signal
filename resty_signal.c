@@ -1,5 +1,6 @@
 #include <signal.h>
 
+
 enum {
     RS_NONE = 0,
     RS_HUP = 1,
@@ -36,7 +37,9 @@ enum {
     RS_INFO = 33
 };
 
-int resty_signal_signum(int num)
+
+int 
+resty_signal_signum(int num)
 {
     switch (num) {
 
