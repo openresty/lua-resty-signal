@@ -38,7 +38,7 @@ enum {
 };
 
 
-int 
+int
 resty_signal_signum(int num)
 {
     switch (num) {

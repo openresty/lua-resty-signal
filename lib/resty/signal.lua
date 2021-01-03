@@ -17,6 +17,7 @@ local new_tab = base.new_tab
 local error = error
 local string_format = string.format
 
+
 local load_shared_lib
 do
     local string_gmatch = string.gmatch
@@ -61,11 +62,11 @@ ffi.cdef[[
 int resty_signal_signum(int num);
 ]]
 
-if not pcall(function() return C.kill end) then
+if not pcall(function () return C.kill end) then
     ffi.cdef("int kill(int32_t pid, int sig);")
 end
 
-if not pcall(function() return C.strerror end) then
+if not pcall(function () return C.strerror end) then
     ffi.cdef("char *strerror(int errnum);")
 end
 
