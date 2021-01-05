@@ -57,7 +57,8 @@ __DATA__
                 WINCH = 28,
                 IO = 29,
                 PWR = 30
-            } 
+            }
+
             local macosx_signals = {
                 HUP = 1,
                 INT = 2,
@@ -101,7 +102,6 @@ __DATA__
                     assert(num == tonumber(signum(signame)))
                 end
             end
-            
         }
     }
 --- response_body
