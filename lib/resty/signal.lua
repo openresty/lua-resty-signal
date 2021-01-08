@@ -15,6 +15,7 @@ local errno = ffi.errno
 local type = type
 local new_tab = base.new_tab
 local error = error
+local string_format = string.format
 
 
 local load_shared_lib
@@ -105,29 +106,43 @@ local signals = {
     WINCH = 28,
     IO = 29,
     PWR = 30,
+    EMT = 31,
+    SYS = 32,
+    INFO = 33
 }
+
+
+local function signum(name)
+    local sig_num
+    if type(name) == "number" then
+        sig_num = name
+    else
+        local id = signals[name]
+        if not id then
+            return nil, "unknown signal name"
+        end
+
+        sig_num = tonumber(resty_signal.resty_signal_signum(id))
+        if sig_num < 0 then
+            error(
+                string_format("missing C def for signal %s = %d", name, id),
+                2
+            )
+        end
+    end
+    return sig_num
+end
 
 
 function _M.kill(pid, sig)
     assert(sig)
 
-    local signum
-    if type(sig) == "number" then
-        signum = sig
-
-    else
-        local id = signals[sig]
-        if not id then
-            return nil, "unknown signal name"
-        end
-
-        signum = tonumber(resty_signal.resty_signal_signum(id))
-        if signum < 0 then
-            error("missing C def for signal ", sig)
-        end
+    local sig_num, err = signum(sig)
+    if err then
+        return nil, err
     end
 
-    local rc = tonumber(C.kill(assert(pid), signum))
+    local rc = tonumber(C.kill(assert(pid), sig_num))
     if rc == 0 then
         return true
     end
@@ -136,10 +151,6 @@ function _M.kill(pid, sig)
     return nil, err
 end
 
-
-function _M.signum(name)
-    return signals[name]
-end
-
+_M.signum = signum
 
 return _M
