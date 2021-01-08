@@ -24,14 +24,17 @@ enum {
     RS_TSTP = 20,
     RS_TTIN = 21,
     RS_TTOU = 22,
-    RS_URG= 23,
+    RS_URG = 23,
     RS_XCPU = 24,
     RS_XFSZ = 25,
     RS_VTALRM = 26,
     RS_PROF = 27,
     RS_WINCH = 28,
     RS_IO = 29,
-    RS_PWR	= 30
+    RS_PWR = 30,
+    RS_EMT = 31,
+    RS_SYS = 32,
+    RS_INFO = 33
 };
 
 
@@ -117,6 +120,31 @@ resty_signal_signum(int num)
 
     case RS_IO:
         return SIGIO;
+
+#ifdef __linux__
+    case RS_PWR:
+        return SIGPWR;
+#endif
+
+    case RS_USR1:
+        return SIGUSR1;
+
+    case RS_USR2:
+        return SIGUSR2;
+
+    case RS_URG:
+        return SIGURG;
+
+#ifdef __APPLE__
+    case RS_EMT:
+        return SIGEMT;
+
+    case RS_SYS:
+        return SIGSYS;
+
+    case RS_INFO:
+        return SIGINFO;
+#endif
 
     default:
         return -1;

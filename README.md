@@ -62,7 +62,7 @@ signum
 Maps the signal name specified to the system-specific signal number. Returns
 `nil` if the signal name is not known.
 
-All the POSIX signal names are supported:
+All the POSIX and BSD signal names are supported:
 
 ```
 HUP
@@ -93,6 +93,10 @@ VTALRM
 PROF
 WINCH
 IO
+PWR
+EMT
+SYS
+INFO
 ```
 
 The special signal name `NONE` is also supported, which is mapped to zero (0).
