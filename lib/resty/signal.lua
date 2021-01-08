@@ -2,10 +2,8 @@ local _M = {
     version = 0.02
 }
 
-
 local ffi = require "ffi"
 local base = require "resty.core.base"
-
 
 local C = ffi.C
 local ffi_str = ffi.string
@@ -16,7 +14,6 @@ local type = type
 local new_tab = base.new_tab
 local error = error
 local string_format = string.format
-
 
 local load_shared_lib
 do
@@ -47,31 +44,41 @@ do
         end
 
         return nil, tried_paths
-    end  -- function
-end  -- do
-
+    end -- function
+end -- do
 
 local resty_signal, tried_paths = load_shared_lib("librestysignal.so")
 if not resty_signal then
-    error("could not load librestysignal.so from the following paths:\n" ..
-          table.concat(tried_paths, "\n"), 2)
+    error(
+        "could not load librestysignal.so from the following paths:\n" ..
+            table.concat(tried_paths, "\n"),
+        2
+    )
 end
 
-
-ffi.cdef[[
+ffi.cdef [[
 int resty_signal_signum(int num);
 ]]
 
-
-if not pcall(function () return C.kill end) then
+if
+    not pcall(
+        function()
+            return C.kill
+        end
+    )
+ then
     ffi.cdef("int kill(int32_t pid, int sig);")
 end
 
-
-if not pcall(function () return C.strerror end) then
+if
+    not pcall(
+        function()
+            return C.strerror
+        end
+    )
+ then
     ffi.cdef("char *strerror(int errnum);")
 end
-
 
 -- Below is just the ID numbers for each POSIX signal. We map these signal IDs
 -- to system-specific signal numbers on the C land (via librestysignal.so).
@@ -111,7 +118,6 @@ local signals = {
     INFO = 33
 }
 
-
 local function signum(name)
     local sig_num
     if type(name) == "number" then
@@ -132,7 +138,6 @@ local function signum(name)
     end
     return sig_num
 end
-
 
 function _M.kill(pid, sig)
     assert(sig)
