@@ -37,6 +37,11 @@ enum {
     RS_INFO = 33
 };
 
+enum {
+    RS_BLOCK = 1,
+    RS_UNBLOCK = 2,
+    RS_SETMASK = 3
+};
 
 int
 resty_signal_signum(int num)
@@ -145,6 +150,24 @@ resty_signal_signum(int num)
     case RS_INFO:
         return SIGINFO;
 #endif
+
+    default:
+        return -1;
+    }
+}
+
+int resty_signal_sigmaskhow(int how)
+{
+    switch (how) {
+
+    case RS_BLOCK:
+        return SIG_BLOCK;
+
+    case RS_UNBLOCK:
+        return SIG_UNBLOCK;
+
+    case RS_SETMASK:
+        return SIG_SETMASK;
 
     default:
         return -1;

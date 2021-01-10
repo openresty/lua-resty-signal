@@ -9,6 +9,7 @@ local base = require "resty.core.base"
 
 local C = ffi.C
 local ffi_str = ffi.string
+local ffi_new = ffi.new
 local tonumber = tonumber
 local assert = assert
 local errno = ffi.errno
@@ -60,6 +61,7 @@ end
 
 ffi.cdef[[
 int resty_signal_signum(int num);
+int resty_signal_sigmaskhow(int how);
 ]]
 
 
@@ -72,6 +74,59 @@ if not pcall(function () return C.strerror end) then
     ffi.cdef("char *strerror(int errnum);")
 end
 
+
+if not pcall(function() return C.signal end) then
+    ffi.cdef [[
+        typedef void (*sighandler_t)(int);
+        sighandler_t signal(int signum, sighandler_t handler);
+    ]]
+end
+
+
+if not pcall(function() return C.signal end) then
+    ffi.cdef [[
+        typedef void (*sighandler_t)(int);
+        sighandler_t signal(int signum, sighandler_t handler);
+    ]]
+end
+
+
+if not pcall(function() return C.sigprocmask end) then
+    ffi.cdef [[
+        typedef struct {
+          unsigned long int __val[16];
+        } __sigset_t;
+        typedef __sigset_t sigset_t;
+        int sigemptyset(sigset_t *set);
+        int sigfillset(sigset_t *set);
+        int sigaddset(sigset_t *set, int signum);
+        int sigdelset(sigset_t *set, int signum);
+        int sigismember(const sigset_t *set, int signum);
+        int sigprocmask(int how, const sigset_t *set,
+               sigset_t *oset);
+    ]]
+end
+
+
+if not pcall(function() return C.fork end) then
+    ffi.cdef [[
+        int fork(void);
+    ]]
+end
+
+
+if not pcall(function() return C.waitpid end) then
+    ffi.cdef [[
+        int waitpid(int pid, int *wstatus, int options);
+    ]]
+end
+
+
+if not pcall(function() return C.wait end) then
+    ffi.cdef [[
+        int wait(int *wstatus);
+    ]]
+end
 
 -- Below is just the ID numbers for each POSIX signal. We map these signal IDs
 -- to system-specific signal numbers on the C land (via librestysignal.so).
@@ -109,6 +164,13 @@ local signals = {
     EMT = 31,
     SYS = 32,
     INFO = 33
+}
+
+
+local hows = {
+    BLOCK = 1,
+    UNBLOCK = 2,
+    SETMASK = 3
 }
 
 
@@ -151,6 +213,103 @@ function _M.kill(pid, sig)
     return nil, err
 end
 
+
+local function sigset()
+    local sigset = ffi_new("sigset_t[1]")
+    return sigset
+end
+
+
+local function sigemptyset(sigset)
+    return C.sigemptyset(sigset)
+end
+
+
+local function sigaddset(sigset, name)
+    -- check signum
+    local sig_num = signum(name)
+
+    return C.sigaddset(sigset, sig_num)
+end
+
+
+local function sigdelset(sigset, name)
+    -- check signum
+    local sig_num = signum(name)
+
+    return C.sigdelset(sigset, sig_num)
+end
+
+
+local function sigmaskhow(how)
+    local sig_how
+    if type(how) == "number" then
+        sig_how = how
+    else
+        local id = hows[how]
+        if not id then
+            return nil, "unknown sigprocmask name"
+        end
+
+        sig_how = tonumber(resty_signal.resty_signal_sigmaskhow(id))
+        if sig_how < 0 then
+            error(
+                string_format("missing C def for sigprocmask %s = %d", how, id),
+                2
+            )
+        end
+    end
+    return sig_how
+end
+
+
+local function sigprocmask(how, sigset, old_sigset)
+    local sig_how = sigmaskhow(how)
+    return C.sigprocmask(sig_how, sigset, old_sigset)
+end
+
+
+local function signal(name, call_back)
+    local sig_num = signum(name)
+    local cb = ffi.new(ffi.typeof("sighandler_t"), call_back)
+    return C.signal(sig_num, cb)
+end
+
+
+local function fork()
+    --
+    return C.fork()
+end
+
+
+--[[
+    block wait
+]]
+local function wait()
+    local ws = ffi.new("int[1]", 0)
+    return C.wait(ws), tonumber(ws[0])
+end
+
+
+--[[
+    unblock wait
+]]
+local function waitpid(pid)
+    local ws = ffi.new("int[1]", 0)
+    return C.waitpid(pid or -1, ws, 1), tonumber(ws[0])
+end
+
 _M.signum = signum
+_M.sigset = sigset
+_M.sigemptyset = sigemptyset
+_M.sigaddset = sigaddset
+_M.sigdelset = sigdelset
+_M.sigmaskhow = sigmaskhow
+_M.sigprocmask = sigprocmask
+_M.signal = signal
+_M.fork = fork
+_M.wait = wait
+_M.waitpid = waitpid
+
 
 return _M
