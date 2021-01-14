@@ -19,7 +19,6 @@ __DATA__
             local resty_signal = require "resty.signal"
             local ngx_pipe = require "ngx.pipe"
             local kill = resty_signal.kill
-            local fork = resty_signal.fork
             local wait = resty_signal.wait
             local waitpid = resty_signal.waitpid
             local sigset = resty_signal.sigset

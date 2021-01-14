@@ -5,6 +5,7 @@ local _M = {
 
 local ffi = require "ffi"
 local base = require "resty.core.base"
+local process = require "ngx.process"
 
 
 local C = ffi.C
@@ -277,7 +278,10 @@ end
 
 
 local function fork()
-    --
+    if "privileged agent" ~= process.type() then
+        return nil, "not privileged"
+    end
+
     return C.fork()
 end
 
