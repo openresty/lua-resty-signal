@@ -5,7 +5,7 @@ use t::TestKiller;
 
 plan tests => 3 * blocks();
 
-no_long_string();
+#no_long_string();
 #no_diff();
 
 run_tests();
