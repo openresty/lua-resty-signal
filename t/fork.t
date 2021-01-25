@@ -1,3 +1,4 @@
+use lib '.';
 use t::TestSignal::signal 'no_plan';
 
 master_process_enabled(1);
