@@ -8,7 +8,9 @@ add_block_preprocessor(sub {
     if (!defined $block->config) {
         $block->set_value("config", <<'_END_');
             location = /t {
-                echo $arg_a;
+                content_by_lua_block {
+                    ngx.say(ngx.var.arg_a)
+                }
             }
 _END_
     }
