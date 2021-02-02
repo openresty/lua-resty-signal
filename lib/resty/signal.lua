@@ -84,14 +84,6 @@ if not pcall(function() return C.signal end) then
 end
 
 
-if not pcall(function() return C.signal end) then
-    ffi.cdef [[
-        typedef void (*sighandler_t)(int);
-        sighandler_t signal(int signum, sighandler_t handler);
-    ]]
-end
-
-
 if not pcall(function() return C.sigprocmask end) then
     ffi.cdef [[
         typedef struct {
