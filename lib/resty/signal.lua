@@ -211,24 +211,41 @@ local function sigset()
     local sigset = ffi_new("sigset_t[1]")
     return sigset
 end
-
-
+    
+    
 local function sigemptyset(sigset)
+    if not sigset then
+        return nil, "sigset is nil"
+    end
+    
     return C.sigemptyset(sigset)
 end
 
 
 local function sigaddset(sigset, name)
-    -- check signum
-    local sig_num = signum(name)
+    if not sigset then
+        return nil, "sigset is nil"
+    end
+    
+    
+    local sig_num, err = signum(name)
+    if err then
+        return nil, err
+    end
 
     return C.sigaddset(sigset, sig_num)
 end
 
 
 local function sigdelset(sigset, name)
-    -- check signum
-    local sig_num = signum(name)
+    if not sigset then
+        return nil, "sigset is nil"
+    end
+    
+    local sig_num, err = signum(name)
+    if err then
+        return nil, err
+    end
 
     return C.sigdelset(sigset, sig_num)
 end
@@ -236,6 +253,10 @@ end
 
 local function sigmaskhow(how)
     local sig_how
+    if not how then
+        return nil, "not how"
+    end
+
     if type(how) == "number" then
         sig_how = how
     else
@@ -257,13 +278,29 @@ end
 
 
 local function sigprocmask(how, sigset, old_sigset)
-    local sig_how = sigmaskhow(how)
+    local sig_how, err = sigmaskhow(how)
+    if err then
+        return nil, err
+    end
+    
+    if not sigset then
+        return nil, "sigset is nil"
+    end
+
     return C.sigprocmask(sig_how, sigset, old_sigset)
 end
 
 
 local function signal(name, call_back)
-    local sig_num = signum(name)
+    local sig_num, err = signum(name)
+    if err then
+        return nil, err
+    end
+    
+    if "function" ~= type(call_back) then
+        return nil, "call_back type must be a function"
+    end
+
     local cb = ffi.new(ffi.typeof("sighandler_t"), call_back)
     return C.signal(sig_num, cb)
 end
@@ -271,7 +308,7 @@ end
 
 local function fork()
     if "privileged agent" ~= process.type() then
-        return nil, "not privileged"
+        return nil, "fork function must call by privileged process"
     end
 
     return C.fork()
