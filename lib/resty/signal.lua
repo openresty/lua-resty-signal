@@ -222,6 +222,15 @@ local function sigemptyset(sigset)
 end
 
 
+local function sigfillset(sigset)
+    if not sigset then
+        return nil, "sigset is nil"
+    end
+
+    return C.sigfillset(sigset)
+end
+
+
 local function sigaddset(sigset, name)
     if not sigset then
         return nil, "sigset is nil"
@@ -335,6 +344,7 @@ end
 _M.signum = signum
 _M.sigset = sigset
 _M.sigemptyset = sigemptyset
+_M.sigfillset = sigfillset
 _M.sigaddset = sigaddset
 _M.sigdelset = sigdelset
 _M.sigmaskhow = sigmaskhow

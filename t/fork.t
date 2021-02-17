@@ -39,6 +39,41 @@ add_block_preprocessor(sub {
         local g_pid
         local shd_fork = ngx.shared.shd_fork
 
+        local function call_back(sig_num)
+            ngx.log(ngx.INFO, "call_back, sig_num:", sig_num)
+        end
+
+        local signals = {
+            NONE = 0,
+            HUP = 1,
+            INT = 2,
+            QUIT = 3,
+            ILL = 4,
+            TRAP = 5,
+            ABRT = 6,
+            BUS = 7,
+            FPE = 8,
+            USR1 = 10,
+            SEGV = 11,
+            USR2 = 12,
+            PIPE = 13,
+            ALRM = 14,
+            TERM = 15,
+            CHLD = 17,
+            CONT = 18,
+            TSTP = 20,
+            TTIN = 21,
+            TTOU = 22,
+            URG = 23,
+            XCPU = 24,
+            XFSZ = 25,
+            VTALRM = 26,
+            PROF = 27,
+            WINCH = 28,
+            IO = 29,
+            PWR = 30
+        }
+
         local v = typ()
         if v == "privileged agent" then
             local new_sigset = sigset()
@@ -47,9 +82,14 @@ add_block_preprocessor(sub {
             sigemptyset(old_sigset)
             sigaddset(new_sigset, "CHLD")
             sigprocmask("UNBLOCK", new_sigset, old_sigset)
-            signal("CHLD", call_back)
-
             ngx.log(ngx.WARN, "process type: ", v)
+
+            for sig, _ in pairs(signals) do
+                --ngx.log(ngx.INFO, "signal:" .. sig)
+                signal(sig, call_back)
+            end
+
+            shd_fork:set("privileged_proc_pid", ngx.worker.pid())
             g_pid = fork()
             if g_pid == 0 then
                 -- child proc
@@ -105,3 +145,55 @@ qr/init_worker_by_lua:\d+: master proc: \d+/
 ]
 --- response_body
 forked_proc_val
+
+
+=== TEST 3:
+--- config
+    location = /t {
+        content_by_lua_block {
+            local resty_signal = require "resty.signal"
+            local signals = {
+                NONE = 0,
+                HUP = 1,
+                INT = 2,
+                QUIT = 3,
+                ILL = 4,
+                TRAP = 5,
+                ABRT = 6,
+                BUS = 7,
+                FPE = 8,
+                USR1 = 10,
+                SEGV = 11,
+                USR2 = 12,
+                PIPE = 13,
+                ALRM = 14,
+                TERM = 15,
+                CHLD = 17,
+                CONT = 18,
+                TSTP = 20,
+                TTIN = 21,
+                TTOU = 22,
+                URG = 23,
+                XCPU = 24,
+                XFSZ = 25,
+                VTALRM = 26,
+                PROF = 27,
+                WINCH = 28,
+                IO = 29,
+                PWR = 30
+            }
+
+            local shd_fork = ngx.shared.shd_fork
+            local pid = tonumber(shd_fork:get("privileged_proc_pid"))
+            resty_signal.kill(pid, "HUP")
+            resty_signal.kill(pid, "INT")
+            resty_signal.kill(pid, "QUIT")
+            --for sig, _ in pairs(signals) do
+            --    resty_signal.kill(pid, sig)
+            --    ngx.sleep(0.01)
+            --end 
+        }
+    }
+--- request
+    GET /t
+--- response_body
