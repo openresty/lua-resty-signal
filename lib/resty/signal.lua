@@ -18,49 +18,49 @@ local error = error
 local string_format = string.format
 
 
-local load_shared_lib
-do
-    local string_gmatch = string.gmatch
-    local string_match = string.match
-    local io_open = io.open
-    local io_close = io.close
-
-    local cpath = package.cpath
-
-    function load_shared_lib(so_name)
-        local tried_paths = new_tab(32, 0)
-        local i = 1
-
-        for k, _ in string_gmatch(cpath, "[^;]+") do
-            local fpath = string_match(k, "(.*/)")
-            fpath = fpath .. so_name
-            -- Don't get me wrong, the only way to know if a file exist is
-            -- trying to open it.
-            local f = io_open(fpath)
-            if f ~= nil then
-                io_close(f)
-                return ffi.load(fpath)
-            end
-
-            tried_paths[i] = fpath
-            i = i + 1
-        end
-
-        return nil, tried_paths
-    end  -- function
-end  -- do
-
-
-local resty_signal, tried_paths = load_shared_lib("librestysignal.so")
-if not resty_signal then
-    error("could not load librestysignal.so from the following paths:\n" ..
-          table.concat(tried_paths, "\n"), 2)
-end
-
-
 ffi.cdef[[
 int resty_signal_signum(int num);
 ]]
+
+
+local resty_signal
+if not pcall(function() resty_signal = C.resty_signal_signum and C end) then
+	local string_gmatch = string.gmatch
+	local string_match = string.match
+	local io_open = io.open
+	local io_close = io.close
+
+	local cpath = package.cpath
+	local tried_paths = new_tab(32, 0)
+
+	local function load_shared_lib(so_name)
+		local i = 1
+
+		for k, _ in string_gmatch(cpath, "[^;]+") do
+			local fpath = string_match(k, "(.*/)")
+			fpath = fpath .. so_name
+			-- Don't get me wrong, the only way to know if a file exist is
+			-- trying to open it.
+			local f = io_open(fpath)
+			if f ~= nil then
+				io_close(f)
+				return ffi.load(fpath)
+			end
+
+			tried_paths[i] = fpath
+			i = i + 1
+		end
+
+		return nil, tried_paths
+	end  -- function
+
+	resty_signal, tried_paths = load_shared_lib("librestysignal.so")
+
+	if not resty_signal then
+		error("could not load librestysignal.so from the following paths:\n" ..
+			table.concat(tried_paths, "\n"), 2)
+	end
+end
 
 
 if not pcall(function () return C.kill end) then
