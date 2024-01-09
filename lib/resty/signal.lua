@@ -32,6 +32,10 @@ do
         local i = 1
 
         for k, _ in string_gmatch(cpath, "[^;]+") do
+            if k == "?.so" then
+                k = "./"
+            end
+
             local fpath = string_match(k, "(.*/)")
             fpath = fpath .. so_name
             -- Don't get me wrong, the only way to know if a file exist is
